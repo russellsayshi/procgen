@@ -9,7 +9,10 @@ const float COMPLETION_BONUS = 10.0;
 
 const int LAVA_WALL = 1;
 const int PLAYER_BALL = 3;
-const int ENEMY = 4;
+const int ENEMY1 = 11;
+const int ENEMY2 = 12;
+const int ENEMY3 = 13;
+const int ENEMY4 = 14;
 const int DOOR = 5;
 const int ENEMY_BALL = 6;
 const int DOOR_OPEN = 7;
@@ -24,6 +27,12 @@ const float ENEMY_VEL = 0.05f;
 const float BALL_V_ROT = PI * 0.23f;
 
 class DodgeballGame : public BasicAbstractGame {
+  private:
+
+    bool is_enemy(int type) {
+        return type == ENEMY1 || type == ENEMY2 || type == ENEMY3 || type == ENEMY4;
+    }
+
   public:
     std::vector<QRectF> rooms;
     float min_dim = 0.0f;
@@ -52,16 +61,19 @@ class DodgeballGame : public BasicAbstractGame {
             names.push_back("misc_assets/character12.png");
         } else if (type == PLAYER_BALL) {
             names.push_back("misc_assets/ball_soccer1.png");
-        } else if (type == ENEMY) {
+        } else if (type == ENEMY1) {
             names.push_back("misc_assets/character1.png");
             names.push_back("misc_assets/character2.png");
             names.push_back("misc_assets/character3.png");
+        } else if (type == ENEMY2) {
             names.push_back("misc_assets/character4.png");
             names.push_back("misc_assets/character5.png");
             names.push_back("misc_assets/character6.png");
+        } else if (type == ENEMY3) {
             names.push_back("misc_assets/character7.png");
             names.push_back("misc_assets/character8.png");
             names.push_back("misc_assets/character9.png");
+        } else if (type == ENEMY4) {
             names.push_back("misc_assets/character10.png");
             names.push_back("misc_assets/character11.png");
         } else if (type == DOOR) {
@@ -96,13 +108,13 @@ class DodgeballGame : public BasicAbstractGame {
     }
 
     bool will_reflect(int src, int target) override {
-        return BasicAbstractGame::will_reflect(src, target) || (src == ENEMY && (target == LAVA_WALL || target == out_of_bounds_object));
+        return BasicAbstractGame::will_reflect(src, target) || (is_enemy(src) && (target == LAVA_WALL || target == out_of_bounds_object));
     }
 
     void handle_agent_collision(const std::shared_ptr<Entity> &obj) override {
         BasicAbstractGame::handle_agent_collision(obj);
 
-        if (obj->type == ENEMY) {
+        if (is_enemy(obj->type)) {
             step_data.done = true;
         } else if (obj->type == ENEMY_BALL) {
             step_data.done = true;
@@ -121,7 +133,7 @@ class DodgeballGame : public BasicAbstractGame {
         if (target->type == PLAYER_BALL) {
             if (src->type == LAVA_WALL) {
                 target->will_erase = true;
-            } else if (src->type == ENEMY) {
+            } else if (is_enemy(src->type)) {
                 src->health -= 1;
                 target->will_erase = true;
 
@@ -344,14 +356,22 @@ class DodgeballGame : public BasicAbstractGame {
 
         reposition_agent();
 
-        num_enemies = rand_gen.randn(max_extra_enemies + 1) + 3;
+        num_enemies = rand_gen.randn(max_extra_enemies + 1) + 4; // TODO russell upped min enemies to four
 
-        spawn_entities(num_enemies, enemy_r, ENEMY, 0, 0, main_width, main_height);
+        int num_enemies4 = num_enemies/4;
+        int num_enemies3 = num_enemies4;
+        int num_enemies2 = num_enemies/2 - num_enemies4;
+        int num_enemies1 = num_enemies - num_enemies4 - num_enemies3 - num_enemies2;
 
-        int enemy_theme = rand_gen.randn(NUM_ENEMY_THEMES);
+        spawn_entities(num_enemies1, enemy_r, ENEMY1, 0, 0, main_width, main_height);
+        spawn_entities(num_enemies2, enemy_r, ENEMY2, 0, 0, main_width, main_height);
+        spawn_entities(num_enemies3, enemy_r, ENEMY3, 0, 0, main_width, main_height);
+        spawn_entities(num_enemies4, enemy_r, ENEMY4, 0, 0, main_width, main_height);
+
+        int enemy_theme = rand_gen.randn(2);//NUM_ENEMY_THEMES); TODO RUSSELL fix
 
         for (auto ent : entities) {
-            if (ent->type == ENEMY) {
+            if (is_enemy(ent->type)) {
                 ent->image_theme = enemy_theme;
                 ent->health = 1;
                 ent->spawn_time = 0;
@@ -396,7 +416,7 @@ class DodgeballGame : public BasicAbstractGame {
         for (int i = (int)(entities.size()) - 1; i >= 0; i--) {
             auto ent = entities[i];
 
-            if (ent->type == ENEMY) {
+            if (is_enemy(ent->type)) {
                 num_enemies++;
 
                 if (ent->spawn_time == 0) {
