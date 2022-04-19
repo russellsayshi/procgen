@@ -71,6 +71,9 @@ void Game::parse_options(std::string name, VecOptions opts) {
     opts.consume_int("debug_mode", &options.debug_mode);
     opts.consume_int("game_type", &game_type);
 
+    //custom for irl
+    opts.consume_string("extra_info", &options.extra_info);
+
     opts.ensure_empty();
 }
 
@@ -171,6 +174,7 @@ void Game::serialize(WriteBuffer *b) {
     b->write_int(SERIALIZE_VERSION);
     
     b->write_string(game_name);
+    b->write_string(options.extra_info);
 
     b->write_int(options.paint_vel_info);
     b->write_int(options.use_generated_assets);
@@ -231,6 +235,7 @@ void Game::serialize(WriteBuffer *b) {
 void Game::deserialize(ReadBuffer *b) {
     fassert(SERIALIZE_VERSION == b->read_int());
     fassert(game_name == b->read_string());
+    options.extra_info = b->read_string();
 
     options.paint_vel_info = b->read_int();
     options.use_generated_assets = b->read_int();

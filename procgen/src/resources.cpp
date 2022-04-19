@@ -808,6 +808,9 @@ void images_load() {
         "platformer/playerRed_switch2.png",
         "platformer/playerRed_swim1.png",
         "platformer/playerGrey_duck.png",
+        "misc_assets/ball_soccer3.png",
+        "misc_assets/ball_soccer4.png",
+        "misc_assets/ball_soccer5.png",
     };
 
     for (const auto& sprite_path : sprite_paths) {
