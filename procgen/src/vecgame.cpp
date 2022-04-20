@@ -266,6 +266,61 @@ VecGame::VecGame(int _nenvs, VecOptions opts) {
         s.high.int32 = INT32_MAX;
         info_types.push_back(s);
     }
+
+    {
+    struct libenv_tensortype s;
+        strcpy(s.name, "inv2_enemy1");
+        s.scalar_type = LIBENV_SCALAR_TYPE_DISCRETE;
+        s.dtype = LIBENV_DTYPE_INT32;
+        s.ndim = 0,
+        s.low.int32 = 0;
+        s.high.int32 = INT32_MAX;
+        info_types.push_back(s);
+    }
+
+    {
+    struct libenv_tensortype s;
+        strcpy(s.name, "inv2_enemy2");
+        s.scalar_type = LIBENV_SCALAR_TYPE_DISCRETE;
+        s.dtype = LIBENV_DTYPE_INT32;
+        s.ndim = 0,
+        s.low.int32 = 0;
+        s.high.int32 = INT32_MAX;
+        info_types.push_back(s);
+    }
+
+    {
+    struct libenv_tensortype s;
+        strcpy(s.name, "inv2_enemy3");
+        s.scalar_type = LIBENV_SCALAR_TYPE_DISCRETE;
+        s.dtype = LIBENV_DTYPE_INT32;
+        s.ndim = 0,
+        s.low.int32 = 0;
+        s.high.int32 = INT32_MAX;
+        info_types.push_back(s);
+    }
+
+    {
+    struct libenv_tensortype s;
+        strcpy(s.name, "inv2_enemy4");
+        s.scalar_type = LIBENV_SCALAR_TYPE_DISCRETE;
+        s.dtype = LIBENV_DTYPE_INT32;
+        s.ndim = 0,
+        s.low.int32 = 0;
+        s.high.int32 = INT32_MAX;
+        info_types.push_back(s);
+    }
+
+    {
+    struct libenv_tensortype s;
+        strcpy(s.name, "did_reach_exit_door");
+        s.scalar_type = LIBENV_SCALAR_TYPE_DISCRETE;
+        s.dtype = LIBENV_DTYPE_INT32;
+        s.ndim = 0,
+        s.low.int32 = 0;
+        s.high.int32 = INT32_MAX;
+        info_types.push_back(s);
+    }
     
     if (render_human) {
         struct libenv_tensortype s;

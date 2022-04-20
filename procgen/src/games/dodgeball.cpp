@@ -44,6 +44,10 @@ class DodgeballGame : public BasicAbstractGame {
 
   public:
     std::vector<float> ball_score_by_enemy_type;
+    std::vector<std::shared_ptr<Entity>> enemies;
+    std::vector<bool> enemies_alive;
+    int ball_hits[4];
+
     std::vector<QRectF> rooms;
     bool has_completed_level;
     float min_dim = 0.0f;
@@ -59,9 +63,31 @@ class DodgeballGame : public BasicAbstractGame {
         : BasicAbstractGame(NAME) {
         mixrate = .5;
 
-        enemy_fire_delay = 50;
+        enemy_fire_delay = 10;
 
         out_of_bounds_object = OOB_WALL;
+    }
+
+    void tell_entity_to_dip(const std::shared_ptr<Entity>& ent) {
+	if (ent->will_erase) return;
+	ent->will_erase = true;
+	if (ent->type == ENEMY1) {
+            assert(enemies[0]->type == ENEMY1);
+	    assert(enemies_alive[0]);
+	    enemies_alive[0] = false;
+	} else if (ent->type == ENEMY2) {
+            assert(enemies[1]->type == ENEMY2);
+	    assert(enemies_alive[1]);
+	    enemies_alive[1] = false;
+	} else if (ent->type == ENEMY3) {
+            assert(enemies[2]->type == ENEMY3);
+	    assert(enemies_alive[2]);
+	    enemies_alive[2] = false;
+	} else if (ent->type == ENEMY4) {
+            assert(enemies[3]->type == ENEMY4);
+	    assert(enemies_alive[3]);
+	    enemies_alive[3] = false;
+	}
     }
 
     void load_background_images() override {
@@ -139,15 +165,19 @@ class DodgeballGame : public BasicAbstractGame {
         if (is_enemy(obj->type)) {
 		//step_data.done = true;
         } else if (obj->type == ENEMY1_BALL) {
+		ball_hits[0]++;
 		step_data.reward += ball_score_by_enemy_type[0];
 		obj->will_erase = true;
         } else if (obj->type == ENEMY2_BALL) {
+		ball_hits[1]++;
 		step_data.reward += ball_score_by_enemy_type[1];
 		obj->will_erase = true;
         } else if (obj->type == ENEMY3_BALL) {
+		ball_hits[2]++;
 		step_data.reward += ball_score_by_enemy_type[2];
 		obj->will_erase = true;
         } else if (obj->type == ENEMY4_BALL) {
+		ball_hits[3]++;
 		step_data.reward += ball_score_by_enemy_type[3];
 		obj->will_erase = true;
         } else if (obj->type == DOOR) {
@@ -168,13 +198,13 @@ class DodgeballGame : public BasicAbstractGame {
     void handle_collision(const std::shared_ptr<Entity> &src, const std::shared_ptr<Entity> &target) override {
         if (target->type == PLAYER_BALL) {
             if (src->type == LAVA_WALL) {
-                target->will_erase = true;
+		tell_entity_to_dip(target);
             } else if (is_enemy(src->type)) {
                 src->health -= 1;
                 target->will_erase = true;
 
                 if (src->health <= 0 && !src->will_erase) {
-                    src->will_erase = true;
+	            tell_entity_to_dip(src);
                     //step_data.reward += ENEMY_REWARD;
 
                     auto ent = spawn_child(src, DUST_CLOUD, src->rx);
@@ -304,10 +334,26 @@ class DodgeballGame : public BasicAbstractGame {
         main_height = world_dim;
     }
 
+    void observe() override {
+        Game::observe();
+        //*(float *)(info_bufs[info_name_to_offset.at("inv2_enemy1")]) = 0.123;
+        //*(float *)(info_bufs[info_name_to_offset.at("inv2_enemy2")]) = 0.24;
+        //*(float *)(info_bufs[info_name_to_offset.at("inv2_enemy3")]) = 0.124;
+        //*(float *)(info_bufs[info_name_to_offset.at("inv2_enemy4")]) = 0.2414;
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy1")]) = ball_hits[0];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy2")]) = ball_hits[1];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy3")]) = ball_hits[2];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy4")]) = ball_hits[3];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("did_reach_exit_door")]) = has_completed_level;
+    }
+
     void game_reset() override {
         BasicAbstractGame::game_reset();
 	ticks = 0;
 	has_completed_level = false;
+	enemies.clear();
+	enemies_alive.clear();
+	for(int i = 0; i < 4; i++) ball_hits[i] = 0;
 
         options.center_agent = options.distribution_mode == MemoryMode;
 
@@ -428,10 +474,16 @@ class DodgeballGame : public BasicAbstractGame {
 		}
 		spawn_entities(1, enemy_r, enemy_type_int, 0, 0, main_width, main_height);
 	}*/
-        spawn_entities(1, enemy_r, ENEMY1, 0, 0, main_width, main_height);
-        spawn_entities(1, enemy_r, ENEMY2, 0, 0, main_width, main_height);
-        spawn_entities(1, enemy_r, ENEMY3, 0, 0, main_width, main_height);
-        spawn_entities(1, enemy_r, ENEMY4, 0, 0, main_width, main_height);
+        enemies.push_back(spawn_entity(enemy_r, ENEMY1, 0, 0, main_width, main_height));
+        enemies.push_back(spawn_entity(enemy_r, ENEMY2, 0, 0, main_width, main_height));
+        enemies.push_back(spawn_entity(enemy_r, ENEMY3, 0, 0, main_width, main_height));
+        enemies.push_back(spawn_entity(enemy_r, ENEMY4, 0, 0, main_width, main_height));
+	enemies_alive.push_back(true);
+	enemies_alive.push_back(true);
+	enemies_alive.push_back(true);
+	enemies_alive.push_back(true);
+	assert(enemies.size() == 4);
+	assert(enemies_alive.size() == 4);
 	/*
         spawn_entities(num_enemies1, enemy_r, ENEMY1, 0, 0, main_width, main_height);
         spawn_entities(num_enemies2, enemy_r, ENEMY2, 0, 0, main_width, main_height);
@@ -439,7 +491,7 @@ class DodgeballGame : public BasicAbstractGame {
         spawn_entities(num_enemies4, enemy_r, ENEMY4, 0, 0, main_width, main_height);
 	*/
 
-        int enemy_theme = rand_gen.randn(2);//NUM_ENEMY_THEMES); TODO RUSSELL fix
+        int enemy_theme = 1; //rand_gen.randn(2);//NUM_ENEMY_THEMES); TODO RUSSELL fix
 
         for (auto ent : entities) {
             if (is_enemy(ent->type)) {
@@ -470,7 +522,7 @@ class DodgeballGame : public BasicAbstractGame {
 		std::cerr << "Unknown ball type" << std::endl;
 	}
         auto new_ball = add_entity(ent->x, ent->y, vx * ball_vscale, vy * ball_vscale, ball_r, ball_type);
-        ent->fire_time = cur_time + rand_gen.randn(4);
+        ent->fire_time = cur_time + rand_gen.randn(4)/3.0;
         new_ball->vrot = BALL_V_ROT;
         new_ball->expire_time = 50;
     }
@@ -480,6 +532,7 @@ class DodgeballGame : public BasicAbstractGame {
 	ticks++;
 	if(ticks >= 250) {
 		step_data.done = true;
+		step_data.level_complete = true;
 	}
 
         float vx = last_move_action / 3 - 1;
