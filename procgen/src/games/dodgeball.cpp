@@ -477,13 +477,13 @@ class DodgeballGame : public BasicAbstractGame {
         enemies.push_back(spawn_entity(enemy_r, ENEMY1, 0, 0, main_width, main_height));
         enemies.push_back(spawn_entity(enemy_r, ENEMY2, 0, 0, main_width, main_height));
         enemies.push_back(spawn_entity(enemy_r, ENEMY3, 0, 0, main_width, main_height));
-        enemies.push_back(spawn_entity(enemy_r, ENEMY4, 0, 0, main_width, main_height));
+        //enemies.push_back(spawn_entity(enemy_r, ENEMY4, 0, 0, main_width, main_height));
 	enemies_alive.push_back(true);
 	enemies_alive.push_back(true);
 	enemies_alive.push_back(true);
-	enemies_alive.push_back(true);
-	assert(enemies.size() == 4);
-	assert(enemies_alive.size() == 4);
+	//enemies_alive.push_back(true);
+	assert(enemies.size() == 3);
+	assert(enemies_alive.size() == 3);
 	/*
         spawn_entities(num_enemies1, enemy_r, ENEMY1, 0, 0, main_width, main_height);
         spawn_entities(num_enemies2, enemy_r, ENEMY2, 0, 0, main_width, main_height);
