@@ -454,7 +454,7 @@ class DodgeballGame : public BasicAbstractGame {
 			if (ss.peek() == ',' || ss.peek() == ' ')
 				ss.ignore();
 		}
-		fassert(ball_score_by_enemy_type.size() == 4);
+		fassert(ball_score_by_enemy_type.size() == 3);
 	}
 
 	/*for(int i = 0; i < options.extra_info.size(); i++) {
