@@ -342,7 +342,7 @@ class MinerGame : public BasicAbstractGame {
                     //step_data.done = true;
 		    set_obj(idx, SPACE);
 		    if (obj == BOULDER || obj == MOVING_BOULDER) {
-			step_data.reward += score_by_type[0] * 0.7;
+			step_data.reward += score_by_type[2] * 0.7;
 		    } else if (obj == DIAMOND1 || obj == MOVING_DIAMOND1) {
 			step_data.reward += score_by_type[0];
 		    } else if (obj == DIAMOND2 || obj == MOVING_DIAMOND2) {
