@@ -342,11 +342,11 @@ class MinerGame : public BasicAbstractGame {
                     //step_data.done = true;
 		    set_obj(idx, SPACE);
 		    if (obj == BOULDER || obj == MOVING_BOULDER) {
-			step_reward += score_by_type[0] * 0.7;
+			step_data.reward += score_by_type[0] * 0.7;
 		    } else if (obj == DIAMOND1 || obj == MOVING_DIAMOND1) {
-			step_reward += score_by_type[0];
+			step_data.reward += score_by_type[0];
 		    } else if (obj == DIAMOND2 || obj == MOVING_DIAMOND2) {
-			step_reward += score_by_type[0];
+			step_data.reward += score_by_type[0];
 		    }
                     //std::cout << "done due to MOVING OBJECT" << std::endl;
                 } else if (is_round(obj2) && obj_x > 0 && is_free(idx - 1) && is_free(idx - main_width - 1)) {
