@@ -1,4 +1,4 @@
-
+#include <iostream>
 #include "game.h"
 #include "vecoptions.h"
 
@@ -135,6 +135,15 @@ void Game::step() {
     game_step();
 
     step_data.done = step_data.done || will_force_reset || (cur_time >= timeout);
+    bool episode_done_backup = step_data.done;
+    //std::cout << step_data.done << ": " << cur_time << ", use_sequential_levels: " << options.use_sequential_levels << std::endl;
+
+    //std::cout << "episodes remaining: " << episodes_remaining << std::endl;
+    //if (step_data.done) {
+    //    for (int i = 0; i < 10; i++) {
+    //    	std::cout << "WOWWWWW" << std::endl;
+    //    }
+    //}
     total_reward += step_data.reward;
 
     if (step_data.reward != 0) {
@@ -148,13 +157,15 @@ void Game::step() {
         reset();
     }
 
-    if (options.use_sequential_levels && step_data.level_complete) {
-        step_data.done = false;
-    }
+    //if (options.use_sequential_levels && step_data.level_complete) {
+    //    step_data.done = false;
+    //}
 
     episode_done = step_data.done;
 
     observe();
+
+    episode_done = episode_done_backup;
 }
 
 void Game::observe() {

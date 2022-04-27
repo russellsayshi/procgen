@@ -2,16 +2,23 @@
 #include "../assetgen.h"
 #include <set>
 #include <queue>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 const std::string NAME = "miner";
 
 const float COMPLETION_BONUS = 10.0;
-const int DIAMOND_REWARD = 1.0;
+const int DIAMOND1_REWARD = 1.0;
+const int DIAMOND2_REWARD = 1.0;
+const int BOULDER_REWARD = 1.0;
 
 const int BOULDER = 1;
-const int DIAMOND = 2;
+const int DIAMOND1 = 11;
+const int DIAMOND2 = 12;
 const int MOVING_BOULDER = 3;
-const int MOVING_DIAMOND = 4;
+const int MOVING_DIAMOND1 = 13;
+const int MOVING_DIAMOND2 = 14;
 const int ENEMY = 5;
 const int EXIT = 6;
 const int DIRT = 9;
@@ -21,6 +28,8 @@ const int OOB_WALL = 10;
 class MinerGame : public BasicAbstractGame {
   public:
     int diamonds_remaining = 0;
+    int ticks = 0;
+    std::vector<float> score_by_type;
 
     MinerGame()
         : BasicAbstractGame(NAME) {
@@ -36,7 +45,7 @@ class MinerGame : public BasicAbstractGame {
     }
 
     void load_background_images() override {
-        main_bg_images_ptr = &platform_backgrounds;
+        main_bg_images_ptr = nullptr;//&platform_backgrounds;
     }
 
     void asset_for_type(int type, std::vector<std::string> &names) override {
@@ -44,8 +53,10 @@ class MinerGame : public BasicAbstractGame {
             names.push_back("misc_assets/robot_greenDrive1.png");
         } else if (type == BOULDER) {
             names.push_back("misc_assets/elementStone007.png");
-        } else if (type == DIAMOND) {
+        } else if (type == DIAMOND1) {
             names.push_back("misc_assets/gemBlue.png");
+        } else if (type == DIAMOND2) {
+            names.push_back("misc_assets/gemYellow.png");
         } else if (type == EXIT) {
             names.push_back("misc_assets/window.png");
         } else if (type == DIRT) {
@@ -65,14 +76,16 @@ class MinerGame : public BasicAbstractGame {
     }
 
     bool will_reflect(int src, int target) override {
-        return BasicAbstractGame::will_reflect(src, target) || (src == ENEMY && (target == BOULDER || target == DIAMOND || target == MOVING_BOULDER || target == MOVING_DIAMOND || target == out_of_bounds_object));
+        return BasicAbstractGame::will_reflect(src, target) || (src == ENEMY && (target == BOULDER || target == DIAMOND1 || target == DIAMOND2 || target == MOVING_BOULDER || target == MOVING_DIAMOND1 || target == MOVING_DIAMOND2 || target == out_of_bounds_object));
     }
 
     void handle_agent_collision(const std::shared_ptr<Entity> &obj) override {
         BasicAbstractGame::handle_agent_collision(obj);
 
         if (obj->type == ENEMY) {
-            step_data.done = true;
+            //step_data.done = true;
+	    obj->will_erase = true;
+	        //std::cout << "done due to ENEMY" << std::endl;
         } else if (obj->type == EXIT) {
             if (diamonds_remaining == 0) {
                 step_data.reward += COMPLETION_BONUS;
@@ -85,9 +98,11 @@ class MinerGame : public BasicAbstractGame {
     int image_for_type(int type) override {
         if (type == MOVING_BOULDER) {
             return BOULDER;
-        } else if (type == MOVING_DIAMOND) {
-            return DIAMOND;
-        }
+        } else if (type == MOVING_DIAMOND1) {
+            return DIAMOND1;
+        } else if (type == MOVING_DIAMOND2) {
+            return DIAMOND2;
+	}
 
         return BasicAbstractGame::image_for_type(type);
     }
@@ -132,6 +147,18 @@ class MinerGame : public BasicAbstractGame {
     void game_reset() override {
         BasicAbstractGame::game_reset();
 
+	if(score_by_type.size() == 0) {
+		std::stringstream ss(options.extra_info);
+		for (float i; (ss >> i) && (score_by_type.size() < 3);) {
+			score_by_type.push_back(i);
+			if (ss.peek() == ',' || ss.peek() == ' ')
+				ss.ignore();
+		}
+		fassert(score_by_type.size() == 3);
+	}
+
+	ticks = 0;
+
         agent->rx = .5;
         agent->ry = .5;
 
@@ -140,13 +167,17 @@ class MinerGame : public BasicAbstractGame {
         options.center_agent = options.distribution_mode == MemoryMode;
         grid_step = true;
 
-        float diamond_pct = 12 / 400.0f;
+        float diamond1_pct = 12 / 400.0f;
+        float diamond2_pct = 12 / 400.0f;
+        float diamond3_pct = 12 / 400.0f;
         float boulder_pct = 80 / 400.0f;
 
-        int num_diamonds = (int)(diamond_pct * grid_size);
+        int num_diamond1s = (int)(diamond1_pct * grid_size);
+        int num_diamond2s = (int)(diamond2_pct * grid_size);
+        int num_diamond3s = (int)(diamond3_pct * grid_size);
         int num_boulders = (int)(boulder_pct * grid_size);
 
-        std::vector<int> obj_idxs = rand_gen.simple_choose(main_area, num_diamonds + num_boulders + 1);
+        std::vector<int> obj_idxs = rand_gen.simple_choose(main_area, num_diamond1s + num_diamond2s + num_diamond3s + num_boulders + 1);
 
         int agent_x = obj_idxs[0] % main_width;
         int agent_y = obj_idxs[0] / main_width;
@@ -158,13 +189,18 @@ class MinerGame : public BasicAbstractGame {
             set_obj(i, DIRT);
         }
 
-        for (int i = 0; i < num_diamonds; i++) {
+        for (int i = 0; i < num_diamond1s; i++) {
             int cell = obj_idxs[i + 1];
-            set_obj(cell, DIAMOND);
+            set_obj(cell, DIAMOND1);
+        }
+
+        for (int i = 0; i < num_diamond2s; i++) {
+            int cell = obj_idxs[i + 1 + num_diamond1s];
+            set_obj(cell, DIAMOND2);
         }
 
         for (int i = 0; i < num_boulders; i++) {
-            int cell = obj_idxs[i + 1 + num_diamonds];
+            int cell = obj_idxs[i + 1 + num_diamond1s + num_diamond2s];
             set_obj(cell, BOULDER);
         }
 
@@ -193,15 +229,17 @@ class MinerGame : public BasicAbstractGame {
 
         fassert(exit_candidates.size() > 0);
 
-        int exit_cell = exit_candidates[rand_gen.randn((int)(exit_candidates.size()))];
-        set_obj(exit_cell, SPACE);
-        auto exit = add_entity((exit_cell % main_width) + .5, (exit_cell / main_width) + .5, 0, 0, .5, EXIT);
-        exit->render_z = -1;
+        //int exit_cell = exit_candidates[rand_gen.randn((int)(exit_candidates.size()))];
+        //set_obj(exit_cell, SPACE);
+        //auto exit = add_entity((exit_cell % main_width) + .5, (exit_cell / main_width) + .5, 0, 0, .5, EXIT);
+        //exit->render_z = -1;
     }
 
     int get_moving_type(int type) {
-        if (type == DIAMOND)
-            return MOVING_DIAMOND;
+        if (type == DIAMOND1)
+            return MOVING_DIAMOND1;
+        if (type == DIAMOND2)
+            return MOVING_DIAMOND2;
         if (type == BOULDER)
             return MOVING_BOULDER;
 
@@ -209,12 +247,14 @@ class MinerGame : public BasicAbstractGame {
     }
 
     bool is_moving(int type) {
-        return type == MOVING_BOULDER || type == MOVING_DIAMOND;
+        return type == MOVING_BOULDER || type == MOVING_DIAMOND1 || type == MOVING_DIAMOND2;
     }
 
     int get_stationary_type(int type) {
-        if (type == MOVING_DIAMOND)
-            return DIAMOND;
+        if (type == MOVING_DIAMOND1)
+            return DIAMOND1;
+        if (type == MOVING_DIAMOND2)
+            return DIAMOND2;
         if (type == MOVING_BOULDER)
             return BOULDER;
 
@@ -226,7 +266,7 @@ class MinerGame : public BasicAbstractGame {
     }
 
     bool is_round(int type) {
-        return type == BOULDER || type == MOVING_BOULDER || type == DIAMOND || type == MOVING_DIAMOND;
+        return type == BOULDER || type == MOVING_BOULDER || type == DIAMOND1 || type == DIAMOND2 || type == MOVING_DIAMOND1 || type == MOVING_DIAMOND2;
     }
 
     void handle_push() {
@@ -246,6 +286,8 @@ class MinerGame : public BasicAbstractGame {
 
     void game_step() override {
         BasicAbstractGame::game_step();
+	ticks++;
+	//std::cout << ticks << std::endl;
 
         if (action_vx > 0)
             agent->is_reflected = false;
@@ -256,17 +298,25 @@ class MinerGame : public BasicAbstractGame {
 
         int agent_obj = get_obj(int(agent->x), int(agent->y));
 
-        if (agent_obj == DIAMOND) {
-            step_data.reward += DIAMOND_REWARD;
+        if (agent_obj == DIAMOND1) {
+            step_data.reward += score_by_type[0];//DIAMOND1_REWARD;
+	} else if (agent_obj == DIAMOND2) {
+            step_data.reward += score_by_type[1];//DIAMOND2_REWARD;
         }
 
-        if (agent_obj == DIRT || agent_obj == DIAMOND) {
+        if (agent_obj == DIRT || agent_obj == DIAMOND1 || agent_obj == DIAMOND2) {
             set_obj(int(agent->x), int(agent->y), SPACE);
-        }
+	}
 
         int main_area = main_width * main_height;
 
-        int diamonds_count = 0;
+        int diamonds_count = 500;
+
+	if (ticks >= 250) {
+		step_data.level_complete = true;
+        	step_data.done = true;
+        	ticks = 0;
+	}
 
         for (int idx = 0; idx < main_area; idx++) {
             int obj = get_obj(idx);
@@ -276,20 +326,29 @@ class MinerGame : public BasicAbstractGame {
 
             int stat_type = get_stationary_type(obj);
 
-            if (stat_type == DIAMOND) {
-                diamonds_count++;
-            }
+            //if (stat_type == DIAMOND) {
+            //    diamonds_count++;
+            //}
 
-            if (obj == BOULDER || obj == MOVING_BOULDER || obj == DIAMOND || obj == MOVING_DIAMOND) {
-                int below_idx = idx - main_width;
-                int obj2 = get_obj(below_idx);
-                bool agent_is_below = agent_idx == below_idx;
+	    if (obj == BOULDER || obj == MOVING_BOULDER || obj == DIAMOND1 || obj == DIAMOND2 || obj == MOVING_DIAMOND1 || obj == MOVING_DIAMOND2) {
+		int below_idx = idx - main_width;
+		int obj2 = get_obj(below_idx);
+		bool agent_is_below = agent_idx == below_idx;
 
                 if (obj2 == SPACE && !agent_is_below) {
                     set_obj(idx, SPACE);
                     set_obj(below_idx, get_moving_type(obj));
                 } else if (agent_is_below && is_moving(obj)) {
-                    step_data.done = true;
+                    //step_data.done = true;
+		    set_obj(idx, SPACE);
+		    if (obj == BOULDER || obj == MOVING_BOULDER) {
+			step_reward += score_by_type[0] * 0.7;
+		    } else if (obj == DIAMOND1 || obj == MOVING_DIAMOND1) {
+			step_reward += score_by_type[0];
+		    } else if (obj == DIAMOND2 || obj == MOVING_DIAMOND2) {
+			step_reward += score_by_type[0];
+		    }
+                    //std::cout << "done due to MOVING OBJECT" << std::endl;
                 } else if (is_round(obj2) && obj_x > 0 && is_free(idx - 1) && is_free(idx - main_width - 1)) {
                     set_obj(idx, SPACE);
                     set_obj(idx - 1, get_stationary_type(obj));
