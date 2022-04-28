@@ -30,6 +30,7 @@ class MinerGame : public BasicAbstractGame {
     int diamonds_remaining = 0;
     int ticks = 0;
     std::vector<float> score_by_type;
+    std::vector<float> hits_by_type;
 
     MinerGame()
         : BasicAbstractGame(NAME) {
@@ -144,8 +145,18 @@ class MinerGame : public BasicAbstractGame {
         }
     }
 
+    void observe() override {
+        Game::observe();
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy1")]) = ball_hits[0];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy2")]) = ball_hits[1];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy3")]) = ball_hits[2];
+    }
+
     void game_reset() override {
         BasicAbstractGame::game_reset();
+
+	hits_by_type.clear();
+	for(int i = 0; i < 3; i++) hits_by_type.push_back(0);
 
 	if(score_by_type.size() == 0) {
 		std::stringstream ss(options.extra_info);
@@ -300,8 +311,10 @@ class MinerGame : public BasicAbstractGame {
 
         if (agent_obj == DIAMOND1) {
             step_data.reward += score_by_type[0];//DIAMOND1_REWARD;
+	    hits_by_type[0] += 1;
 	} else if (agent_obj == DIAMOND2) {
             step_data.reward += score_by_type[1];//DIAMOND2_REWARD;
+	    hits_by_type[1] += 1;
         }
 
         if (agent_obj == DIRT || agent_obj == DIAMOND1 || agent_obj == DIAMOND2) {
@@ -343,10 +356,13 @@ class MinerGame : public BasicAbstractGame {
 		    set_obj(idx, SPACE);
 		    if (obj == BOULDER || obj == MOVING_BOULDER) {
 			step_data.reward += score_by_type[2] * 0.7;
+			hits_by_type[2] += 0.7;
 		    } else if (obj == DIAMOND1 || obj == MOVING_DIAMOND1) {
 			step_data.reward += score_by_type[0];
+			hits_by_type[0] += 1;
 		    } else if (obj == DIAMOND2 || obj == MOVING_DIAMOND2) {
-			step_data.reward += score_by_type[0];
+			step_data.reward += score_by_type[1];
+			hits_by_type[1] += 1;
 		    }
                     //std::cout << "done due to MOVING OBJECT" << std::endl;
                 } else if (is_round(obj2) && obj_x > 0 && is_free(idx - 1) && is_free(idx - main_width - 1)) {
