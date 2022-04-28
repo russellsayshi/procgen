@@ -147,9 +147,9 @@ class MinerGame : public BasicAbstractGame {
 
     void observe() override {
         Game::observe();
-        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy1")]) = ball_hits[0];
-        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy2")]) = ball_hits[1];
-        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy3")]) = ball_hits[2];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy1")]) = hits_by_type[0];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy2")]) = hits_by_type[1];
+        *(uint32_t *)(info_bufs[info_name_to_offset.at("inv2_enemy3")]) = hits_by_type[2];
     }
 
     void game_reset() override {
