@@ -110,6 +110,11 @@ def main():
         default=False,
         help="use monochromatic rectangles instead of human designed assets",
     )
+    advanced_group.add_argument(
+        "--extra_info",
+        default="1,2,3,4",
+        help="extra info to pass to environment",
+    )
 
     args = parser.parse_args()
 
@@ -120,6 +125,7 @@ def main():
         "use_backgrounds": not args.disable_backgrounds,
         "restrict_themes": args.restrict_themes,
         "use_monochrome_assets": args.use_monochrome_assets,
+        "extra_info": args.extra_info,
     }
     if args.env_name != "coinrun_old":
         kwargs["distribution_mode"] = args.distribution_mode
